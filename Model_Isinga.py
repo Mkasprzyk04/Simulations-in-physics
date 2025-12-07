@@ -12,7 +12,7 @@ beta = 1/(T*kb)
 vec = np.array([[1,0],[0,1], [0,-1],[-1,0]])
 point = np.array([])
 Delta = 0
-chi = []
+chi_temp = [0.5]
 
 @jit(nopython = True)
 def PBC(x):
@@ -25,7 +25,6 @@ def delta(point,Spin):
         somsiad = PBC(point + a)        
         Delta += Spin[somsiad[0]][somsiad[1]]
     return 2 * J * Delta * Spin[point[0]][point[1]]
-
 
 @jit(nopython = True)
 def change_point(Delta, point, Spin):
@@ -40,18 +39,56 @@ def change_point(Delta, point, Spin):
 
 @jit(nopython=True)
 def correlation(Spin):
-    L = len(Spin)
+    L = len(Spin) / 2 
     rmax = L
     chi = []
-    for i in range(L):
-        chi_rows = 0 
-        for r0 in range(rmax):
-            chi_r = 0.0              # inicjalizacja!
+    for r0 in range(L):
+        chi_r = 0 
+        for i in range(rmax):
             for j in range(L):
                 chi_r += Spin[i][j] * Spin[i][PBC(j + r0)]
-            chi_rows += chi_r / L
-        chi.append(chi_rows / L)
+        chi.append(chi_r/ L**2)
     return chi
+
+@jit(nopython=True)
+def cluster_size(chi):
+    rmax = 0
+    L = len(chi)
+    mianownik = 0
+    for i in range(L):
+        if chi[i] > 0.3:
+            rmax +=1 
+        else:
+            break
+
+    for j in range(rmax ):
+        mianownik += np.log(chi[j])
+
+    mianownik *= -2
+    R = rmax*(rmax + 1) / mianownik
+    return R
+
+@jit(nopython=True)
+def mainloop(MSC, point, Delta, Spin, chi_temp):  
+    saved_spins = []  
+    chi = []
+    size = []
+
+    for i in range(MSC):
+        for j in range(L**2):
+            point = np.random.randint(0, L, 2)
+            Delta = delta(point,Spin)
+            Spin = change_point(Delta, point, Spin)
+        
+        if i in [1, 10, 100, 1000, 5000]:
+            saved_spins.append(np.copy(Spin))
+            chi.append(correlation(Spin))
+
+        if i in [10,20,50, 100,200,500,1000, 2000, 5000]:
+            chi_temp = correlation(Spin)
+            size.append(cluster_size(chi_temp))
+            chi_temp = [1]
+    return saved_spins, chi, size 
 
 def draw(Spin):
     plt.imshow(Spin)
@@ -59,32 +96,22 @@ def draw(Spin):
     plt.show()
 
 def draw_chi(chi):
-    X = np.linspace(1,L, L )
+    L = len(Spin)
+    L = int(L/2)
+    X = np.linspace(1,L, L)
     Y = chi
     plt.scatter(X,Y)
     plt.show()
 
-@jit(nopython = True)
-def mainloop(MSC, point, Delta, Spin):  
-    saved_spins = []  
-    chi = []
-    for i in range(MSC):
-        for j in range(L**2):
-            point = np.random.randint(0, L, 2)
-            Delta = delta(point,Spin)
-            Spin = change_point(Delta, point, Spin)
-        if i in [1, 10, 100, 1000, 5000]:
-            saved_spins.append(np.copy(Spin))
-        if i in [10, 100, 1000]:
-            chi.append(correlation(Spin))
-    return saved_spins, chi
 
-
-Spin_matrix, chi = mainloop(MSC, point, Delta, Spin)
+Spin_matrix, chi, size = mainloop(MSC, point, Delta, Spin, chi_temp)
 
 
 for spin in Spin_matrix:
     draw(spin)
-
 for h in chi:
     draw_chi(h)
+
+sizex =  [10,20,50, 100,200,500,1000]
+plt.scatter(sizex, size)
+plt.show()
