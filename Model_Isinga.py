@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from numba import jit
 
 J = 1
-L = 500
-MSC = 1001 
+L = 100
+MSC = 5001 
 T = 2
 Spin = np.random.choice([-1,1], (L,L))
 kb = 1
@@ -86,8 +86,9 @@ def mainloop(MSC, point, Delta, Spin, chi_temp):
 
         if i in [10,20,50, 100,200,500,1000, 2000, 5000]:
             chi_temp = correlation(Spin)
-            size.append(cluster_size(chi_temp))
+            size.append(np.log(cluster_size(chi_temp)))
             chi_temp = [1]
+            
     return saved_spins, chi, size 
 
 def draw(Spin):
@@ -112,6 +113,12 @@ for spin in Spin_matrix:
 for h in chi:
     draw_chi(h)
 
-sizex =  [10,20,50, 100,200,500,1000]
+sizex =  np.log([10,20,50, 100,200,500,1000, 2000, 5000])
+
+a, b = np.polyfit(sizex, size, 1)
+x_line = np.linspace(min(sizex), max(sizex), 100)
+y_line = a * x_line + b
 plt.scatter(sizex, size)
+plt.plot(x_line, y_line, label=f"y = {a:.2f}x + {b:.2f}", linewidth=2)
+plt.legend()
 plt.show()
