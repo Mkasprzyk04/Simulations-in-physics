@@ -1,26 +1,31 @@
-#Script that simulates interactions between particles with in the hermostat, with periodic boundary conditions and showing animation of forming solid state 
+# Script that simulates interactions between particles within the thermostat, with periodic boundary conditions and showing animation of forming solid state 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 import imageio.v2 as imageio
-import os, glob 
+import os
+import glob 
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+RESULTS_DIR = os.path.join(BASE_DIR, "Results")
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
 particle_number = 16
 box_size = 8.0
 eps = 1.0
 sigma = 1.0
-promien = sigma / 2
+radius = sigma / 2
 dt = 0.025
 m = 1.0
 kb = 1.0
 temp = 0.1
 rc = 2.5 * sigma
-T = 5000  # liczba kroków
+T = 5000 
 temp_ext = 0.1
 
-class Czastka:
-    def __init__(self, promien, pos, vel):
-        self.promien = promien
+class Particle:
+    def __init__(self, radius, pos, vel):
+        self.radius = radius
         self.r = pos.copy()
         self.v = vel.copy()
         self.v_half = self.v.copy()
@@ -54,7 +59,7 @@ def init_particles(particle_number, v):
     for i in range(side):
         for j in range(side):
             pos = np.array([(i + 0.5) * spacing, (j + 0.5) * spacing])
-            particles.append(Czastka(promien, pos, v[len(particles)]))
+            particles.append(Particle(radius, pos, v[len(particles)]))
     return particles
 
 def compute_forces(particles):
@@ -77,12 +82,10 @@ def pressure(particles):
     V = box_size ** 2
     N = len(particles)
 
-    # część kinetyczna
     p_kin = 0.0
     for p in particles:
         p_kin += m * np.dot(p.v, p.v)
     p_kin *= 1.0 / (2 * V)
-
 
     w = 0.0
     for i in range(N):
@@ -95,8 +98,7 @@ def pressure(particles):
 
     return p_kin + p_conf
 
-
-def integrate_leapfrog_isokinetic_zabka(particles, T_ext):
+def integrate_leapfrog_isokinetic(particles, T_ext):
     N = len(particles)
 
     v_half_old = [p.v_half.copy() for p in particles]
@@ -131,27 +133,26 @@ def integrate_leapfrog_isokinetic_zabka(particles, T_ext):
 
     return T_inst, eta
 
-
-
-def rysuj(particles, step, Ek):
+def draw(particles, step, Ek):
     plt.clf()
     ax = plt.gca()
     for p in particles:
-        cir = Circle((p.r[0], p.r[1]), radius=p.promien)
+        cir = Circle((p.r[0], p.r[1]), radius=p.radius)
         ax.add_patch(cir)
     plt.xlim((0, box_size))
     plt.ylim((0, box_size))
     plt.title(f"Step {step}")
     plt.gcf().set_size_inches((6,6))
-    plt.savefig(f"img{step:06d}.png")
+    plt.savefig(os.path.join(RESULTS_DIR, f"img{step:06d}.png"))
+    plt.close()
 
-def animacja(filenames):
-    with imageio.get_writer("movie.gif", mode="I") as writer:
+def animate(filenames):
+    with imageio.get_writer(os.path.join(RESULTS_DIR, "movie.gif"), mode="I") as writer:
         for fn in filenames:
             writer.append_data(imageio.imread(fn))
 
-def usun_png():
-    for fname in glob.glob("img*.png"):
+def remove_pngs():
+    for fname in glob.glob(os.path.join(RESULTS_DIR, "img*.png")):
         os.remove(fname)
 
 def potential_energy(particles):
@@ -169,7 +170,6 @@ v = vels(particle_number)
 particles = init_particles(particle_number, v)
 compute_forces(particles)
 
-
 temps = []
 energies = []
 pressures_list = []
@@ -177,7 +177,7 @@ potential_energies = []
 filenames = []
 
 for i in range(T):
-    T_inst, eta_val = integrate_leapfrog_isokinetic_zabka(particles, temp_ext)
+    T_inst, eta_val = integrate_leapfrog_isokinetic(particles, temp_ext)
 
     Ek = kinetic_energy(particles)
     Ep = potential_energy(particles)
@@ -189,29 +189,31 @@ for i in range(T):
     potential_energies.append(Ep)
 
     if i % 50 == 0:
-        rysuj(particles, i, Ek)
-        filenames.append(f"img{i:06d}.png")
+        draw(particles, i, Ek)
+        filenames.append(os.path.join(RESULTS_DIR, f"img{i:06d}.png"))
 
 energies_per_particle = [E / particle_number for E in energies]
-animacja(filenames)
-usun_png()
+animate(filenames)
+remove_pngs()
 
 plt.figure(figsize=(12,5))
-plt.plot(temps, label="Temperatura (termostat)")
-plt.plot(pressures_list, label="Ciśnienie")
-plt.plot(energies_per_particle, label="Energia całkowita / N")
-plt.title("Temperatura, ciśnienie i energia całkowita na cząstkę w czasie")
-plt.xlabel("Krok")
-plt.ylabel("Wartość")
+plt.plot(temps, label="Temperature (thermostat)")
+plt.plot(pressures_list, label="Pressure")
+plt.plot(energies_per_particle, label="Total energy / N")
+plt.title("Temperature, pressure and total energy per particle over time")
+plt.xlabel("Step")
+plt.ylabel("Value")
 plt.legend()
-plt.show()
+plt.savefig(os.path.join(RESULTS_DIR, "thermodynamics.png"))
+plt.close()
 
 plt.figure(figsize=(12,5))
-plt.plot(energies, label="Energia całkowita")
-plt.plot([kinetic_energy(particles) for _ in range(T)], label="Energia kinetyczna")
-plt.plot(potential_energies, label="Energia potencjalna")
-plt.title("Energia całkowita, kinetyczna i potencjalna w czasie")
-plt.xlabel("Krok")
-plt.ylabel("Energia")
+plt.plot(energies, label="Total energy")
+plt.plot([kinetic_energy(particles) for _ in range(T)], label="Kinetic energy")
+plt.plot(potential_energies, label="Potential energy")
+plt.title("Total, kinetic and potential energy over time")
+plt.xlabel("Step")
+plt.ylabel("Energy")
 plt.legend()
-plt.show()
+plt.savefig(os.path.join(RESULTS_DIR, "energies.png"))
+plt.close()

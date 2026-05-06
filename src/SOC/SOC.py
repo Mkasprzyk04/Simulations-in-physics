@@ -1,8 +1,16 @@
-#Simulation of sandpile, showing how this system achives critical point and how does size of avalanches depend on its count
+# Simulation of a sandpile, showing how this system achieves a critical point 
+# and how the size of avalanches depends on their frequency
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from numba import njit
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+RESULTS_DIR = os.path.join(BASE_DIR, "Results")
+
+# Creates the Results folder if it doesn't exist yet
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
 hmax = 4
 L = 31
@@ -51,10 +59,7 @@ for t in range(tmax):
     if t % 100 == 0:
         im_collection.append(np.copy(grid))
 
-
-
 sizes, counts = np.unique(avalanche_sizes, return_counts=True)
-
 
 mask = (sizes >= S_min) & (sizes <= S_max)
 sizes_f = sizes[mask]
@@ -66,33 +71,37 @@ coeffs = np.polyfit(logS, logN, 1)
 tau = -coeffs[0]
 A = 10**coeffs[1]
 
-
 plt.figure()
 plt.plot(times, grains, color='blue')
-plt.xlabel("Czas")
-plt.ylabel("Całkowita liczba ziaren")
-plt.title("Wzrost liczby ziaren w czasie")
+plt.xlabel("Time (iterations)")
+plt.ylabel("Total number of grains")
+plt.title("Growth of grain count over time")
 plt.grid()
-plt.show()
-
+plt.savefig(os.path.join(RESULTS_DIR, "Total_grains_over_time.png"))
+plt.close()
 
 plt.figure()
-plt.loglog(sizes, counts, 'o', markersize=4, label="dane symulacji")
-plt.loglog(sizes_f, A * sizes_f**(-tau), '-', label=f"fit: τ={tau:.2f}")
-plt.xlabel("Rozmiar lawiny S")
-plt.ylabel("Liczność N(S)")
-plt.title("Rozkład lawin, wykładnik potęgowy")
+plt.loglog(sizes, counts, 'o', markersize=4, label="Simulation data")
+plt.loglog(sizes_f, A * sizes_f**(-tau), '-', label=f"Fit: τ={tau:.2f}")
+plt.xlabel("Avalanche size (S)")
+plt.ylabel("Frequency N(S)")
+plt.title("Avalanche size distribution (power law)")
 plt.legend()
 plt.grid(True, which="both", ls="--")
-plt.show()
+plt.savefig(os.path.join(RESULTS_DIR, "Avalanche_distribution.png"))
+plt.close()
 
+# --- ANIMATION: SANDPILE EVOLUTION ---
 fig, ax = plt.subplots()
 img = ax.imshow(im_collection[0], cmap='plasma', vmin=0, vmax=hmax)
 ax.axis('off')
+ax.set_title("Sandpile evolution")
 
 def update(i):
     img.set_data(im_collection[i])
     return img,
 
 anim = FuncAnimation(fig, update, frames=len(im_collection), interval=50, blit=True)
-anim.save('sandpile_animation.gif', writer='pillow', fps=10)
+# Saving animation to folder Results
+anim.save(os.path.join(RESULTS_DIR, 'sandpile_animation.gif'), writer='pillow', fps=10)
+plt.close()
