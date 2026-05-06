@@ -1,8 +1,7 @@
-from scipy import linspace
+# A brief visualization of Lorenz attractor equations 
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import numpy as np 
-#f = pojedyńczy: 0.21 podwójny: 0.31, 0.33, chaos:
 omega = 2* 0.213 * np.pi
 f = 0.4
 
@@ -20,7 +19,7 @@ def equation2(t, xvz):
     return [v, b*x - a*x**3 - c*v,  omega]
 
 a, b = 0, 500
-t = np.array(linspace(a, b, 4000))
+t = np.array(np.linspace(a, b, 4000))
 
 sol1 = solve_ivp(equation1, [a, b], [1,0.15,omega], t_eval=t)
 sol2 = solve_ivp(equation2, [a, b], [0,0.15,omega], t_eval=t)

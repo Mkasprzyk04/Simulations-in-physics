@@ -1,10 +1,11 @@
+#Simulation of Ising model, showing how does size of cluster size and correlation function depend on iteration 
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
 
 J = 1
 L = 100
-MSC = 5001 
+MSC = 2001 
 T = 2
 Spin = np.random.choice([-1,1], (L,L))
 kb = 1

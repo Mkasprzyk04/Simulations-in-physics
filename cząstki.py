@@ -1,9 +1,9 @@
+#Script that simulates interactions between particles with in the hermostat, with periodic boundary conditions and showing animation of forming solid state 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 import imageio.v2 as imageio
-import os, glob
-import numba 
+import os, glob 
 
 particle_number = 16
 box_size = 8.0

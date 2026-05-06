@@ -1,6 +1,7 @@
+#Special case diffusion-limited ggregation simulation that shows a special case of formation of snowflake-like structure 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation 
 
 L = 1000
 midpoint = int(L/2)

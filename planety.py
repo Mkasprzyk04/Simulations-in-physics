@@ -1,3 +1,4 @@
+#Simulation of trajectory and potential energy in two body system using Euler, Verlet and Leapfrog method of solving differential equations
 import numpy as np
 import matplotlib.pyplot as plt
 
