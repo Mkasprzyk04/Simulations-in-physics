@@ -7,6 +7,7 @@ This repository contains a collection of Python scripts simulating various physi
 * **diff_equations** - Solving various physical problems using numerical integration methods, including Euler, Verlet, and Leapfrog algorithms.
 * **wator** - Implementation of the Wa-Tor model: a population dynamics simulation of a predator-prey system in a toroidal world.
 * **Ising** - Simulation of the 2D Ising model, investigating the evolution of cluster sizes and the behavior of correlation functions over time.
+* **Kwantator 5000** - A numeric engine, connected to the GUI, calculating wave function in anharmonic oscillator.
 * **SOC, GS and DLA** - A collection of advanced models, including: 
   * Self-Organized Criticality (SOC) through the Abelian sandpile model and its avalanche dynamics.
   * Solving the Gray-Scott reaction-diffusion equations.
